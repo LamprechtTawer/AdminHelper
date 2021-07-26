@@ -110,6 +110,7 @@ local year_buffer = imgui.ImBuffer(os.date("%Y"), 5)
 local month_buffer = imgui.ImBuffer(getDatePC(2), 3)
 local day_buffer = imgui.ImBuffer(getDatePC(3), 3)
 local accnumb_buffer = imgui.ImBuffer(100)
+local checkbox_r = imgui.ImBool(false)
 
 if not doesDirectoryExist(getWorkingDirectory().."\\logs") then createDirectory(getWorkingDirectory().."\\logs") end
 if not doesDirectoryExist(getWorkingDirectory().."\\logs\\temp") then createDirectory(getWorkingDirectory().."\\logs\\temp") end
@@ -151,7 +152,9 @@ function main()
 		return
 	end
 	
-	downloadUrlToFile(update_url, update_path, function(id, status)
+	--autoupdate("https://github.com/LamprechtTawer/AdminHelper/raw/main/upd.json")
+	
+	--[[downloadUrlToFile(update_url, update_path, function(id, status)
         if status == dlstatus.STATUS_ENDDOWNLOADDATA and doesFileExist(update_path) then
             local updateIni = inicfg.load(nil, update_path)
 			if updateIni then
@@ -167,7 +170,9 @@ function main()
 			end
             os.remove(update_path)
         end
-    end)
+    end)]]
+	
+	
 	
 	imgui.Process = true
 	imgui.SwitchContext()
@@ -368,7 +373,12 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.NewInputText('##SearchBarD', day_buffer, 60, u8'День', 1)
 			imgui.SameLine()
-			imgui.NewInputText('##SearchBarA', accnumb_buffer, 180, u8'Ник или номер аккаунта', 1)
+			--imgui.NewInputText('##SearchBarA', accnumb_buffer, 180, u8'Ник или номер аккаунта', 1)
+			imgui.PushItemWidth(180)
+			imgui.InputText('##SearchBarA', accnumb_buffer, checkbox_r.v and 0 or imgui.InputTextFlags.ReadOnly)
+			imgui.PopItemWidth()
+			imgui.SameLine()
+			imgui.Checkbox('Checkbox', checkbox_r)
 			
 			imgui.SameLine()
 			imgui.SetCursorPosX(727)
@@ -3024,6 +3034,57 @@ function deleteLine(filePath, text)
     local file = io.open(filePath, 'w+')
     file:write(table.concat(tableOfLines), "\n")
     file:close()
+end
+
+function autoupdate(json_url)
+	local dlstatus = require('moonloader').download_status
+	local json = getWorkingDirectory() .. '\\'..thisScript().name..'-version.json'
+	if doesFileExist(json) then os.remove(json) end
+		downloadUrlToFile(json_url, json,
+		function(id, status, p1, p2)
+			if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+				if doesFileExist(json) then
+					local f = io.open(json, 'r')
+					if f then
+						local info = decodeJson(f:read('*a'))
+						updatelink = info.updateurl
+						updateversion = info.latest
+						f:close()
+						os.remove(json)
+						if updateversion ~= thisScript().version then
+							lua_thread.create(function()
+								local dlstatus = require('moonloader').download_status
+								dl.AddMessageToChat(4, "["..thisScript().name.."] {FFFFFF}Обнаружено обновление. Обновиться c версии "..thisScript().version..' на '..updateversion ".", "", 0xBA55D3, 0xBA55D3)
+									wait(250)
+								downloadUrlToFile(updatelink, thisScript().path,
+									function(id3, status1, p13, p23)
+										if status1 == dlstatus.STATUS_DOWNLOADINGDATA then
+											printlog(string.format('Загружено %d из %d.', p13, p23))
+										elseif status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
+											printlog('Загрузка обновления завершена')
+											goupdatestatus = true
+											lua_thread.create(function() wait(500) thisScript():reload() end)
+										end
+										if status1 == dlstatus.STATUSEX_ENDDOWNLOAD then
+											if goupdatestatus == nil then
+												dl.AddMessageToChat(4, "["..thisScript().name.."] {FFFFFF}Ошибка обвноления.", "", 0xBA55D3, 0xBA55D3)
+												update = false
+											end
+										end
+								end)
+							end)
+						else
+							update = false
+							printlog('Обновление не требуется')
+						end
+					end
+				else
+					printlog('Ошибка обновления')
+					update = false
+				end
+			end
+		end)
+	while update ~= false do wait(100) end
 end
 
 --[[
