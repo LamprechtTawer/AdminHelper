@@ -8,7 +8,7 @@ require("SA-MP API")
 script_name("Admin Helper")
 script_author("Meow Zanetti")
 script_description("Admins information system")
-script_version("0.6")
+script_version("26.07.2021")
 
 local imgui = require("imgui")
 local key = require("vkeys")
