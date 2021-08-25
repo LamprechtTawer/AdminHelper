@@ -2,5 +2,6 @@
   "updateurl": "https://github.com/LamprechtTawer/AdminHelper/raw/main/AdminHelper.luac",
   "latest": "10",
   "date": "25.08.2021",
-  "latestudf": "4"
+  "latestudf": "4",
+  "updateurludf": "https://github.com/LamprechtTawer/AdminHelper/raw/main/init.luac",
 }
